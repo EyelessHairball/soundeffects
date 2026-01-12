@@ -1,0 +1,180 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sound Browser</title> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="https://i.ibb.co/wrPKVgwH/folder.png">
+</head>
+<style>
+  body {
+    font-family: Arial, Verdana, sans-serif;
+    background: #fefefe;
+    color: #000;
+    padding: 20px;
+    margin: 0;
+  }
+  h1 {
+    text-align: center;
+    color: #fff;
+    font-weight: bold;
+    font-size: 22px;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 0 #000;
+    background: linear-gradient(180deg, #6da2d0 0%, #3681c5 100%);
+    padding: 10px;
+    border: 1px solid #7cb7e3;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    max-width: 100%;
+    margin: 0 auto 20px auto;
+  }
+  #files {
+    max-width: 100%;
+    margin: 0 auto;
+    border: 1px solid #b3b3b3;
+    background: #f4f4f4;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+  .item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #d4d4d4;
+    background: #fff;
+  }
+  .item:nth-child(even) {
+    background: #edf2f6;
+  }
+  .item:hover {
+    background: #fef9e7;
+  }
+  .left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+  .right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  a {
+    color: #1f66a8;
+    text-decoration: none;
+    font-size: 12px;
+  }
+  a:hover {
+    color: #ff6600;
+    text-decoration: underline;
+  }
+  .dir {
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  .audio-preview {
+    width: 250px;
+    height: 30px;
+  }
+  .raw-link {
+    font-size: 11px;
+    padding: 2px 6px;
+    background: #fff;
+    border: 1px solid #c0c0c0;
+    text-decoration: none;
+  }
+  .raw-link:hover {
+    background: #e8f0f8;
+  }
+  .icon {
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+  }
+</style>
+<body>
+  <div id="files">Loading...</div>
+  <script>
+    const user = "EyelessHairball";
+    const repo = "soundeffects";
+    const audioExtensions = ["mp3", "wav", "ogg", "m4a", "flac", "aac", "wma"];
+    const audioIcon = "https://i.ibb.co/bg0z74jV/music-12065345.png";
+    
+    async function listDir(path, container, indent = 0) {
+      const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${path}`);
+      const data = await res.json();
+      
+      for (const file of data) {
+        const ext = file.name.split(".").pop().toLowerCase();
+        if (file.type !== "dir" && !audioExtensions.includes(ext)) continue;
+        
+        const line = document.createElement("div");
+        line.className = "item";
+        
+        const left = document.createElement("div");
+        left.className = "left";
+        left.style.paddingLeft = indent + "px";
+        
+        const icon = document.createElement("span");
+        icon.className = "icon";
+        const img = document.createElement("img");
+        img.width = 16;
+        img.height = 16;
+        
+        if (file.type === "dir") {
+          img.src = "https://i.ibb.co/wrPKVgwH/folder.png";
+        } else {
+          img.src = audioIcon;
+        }
+        icon.appendChild(img);
+        
+        left.appendChild(icon);
+        
+        const link = document.createElement("a");
+        if (file.type === "dir") {
+          link.textContent = file.name + "/";
+          link.href = "#";
+          link.className = "dir";
+        } else {
+          link.textContent = file.name;
+          link.href = file.download_url;
+          link.target = "_blank";
+        }
+        left.appendChild(link);
+        
+        line.appendChild(left);
+        
+        if (file.type !== "dir") {
+          const right = document.createElement("div");
+          right.className = "right";
+          
+          const audio = document.createElement("audio");
+          audio.src = file.download_url;
+          audio.className = "audio-preview";
+          audio.controls = true;
+          audio.preload = "none";
+          right.appendChild(audio);
+          
+          const rawLink = document.createElement("a");
+          rawLink.href = file.download_url;
+          rawLink.textContent = "[download]";
+          rawLink.className = "raw-link";
+          rawLink.download = file.name;
+          right.appendChild(rawLink);
+          
+          line.appendChild(right);
+        }
+        
+        container.appendChild(line);
+        
+        if (file.type === "dir") {
+          await listDir(file.path, container, indent + 20);
+        }
+      }
+    }
+    
+    const root = document.getElementById("files");
+    root.innerHTML = "";
+    listDir("", root);
+  </script>
+</body>
+</html>
